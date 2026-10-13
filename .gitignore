@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Kubernetes credentials
+.kube/
+kubeconfig
+kubeconfig.*
+*-kubeconfig*
+*.kubeconfig
+
+# Private keys
+*.pem
+*.key
+
+# Local tooling environments
+.venv/
+__pycache__/
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*~
