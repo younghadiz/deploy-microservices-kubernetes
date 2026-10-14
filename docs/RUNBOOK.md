@@ -1,8 +1,17 @@
-# RUNBOOK — Deploy Microservices in Kubernetes on Linode LKE
+# Implementation and Operations Runbook
 
-This standalone guide reproduces the implementation from a fresh workspace through local validation, cloud deployment, verification, troubleshooting, recovery, release and cleanup. All required manifest contents are included in section 5. No conversation history is needed.
+## Online Boutique on Linode Kubernetes Engine
 
-Run small command blocks individually. Text labelled as output or expected result is not a shell command. Commands target the Mac unless explicitly identified as Cloud Manager actions or commands inside a Pod. Use Vim or another editor to create files; no combined setup script is required.
+- **Author:** Gafari Salaudeen
+- **Project:** TechWorld with Nana — Module 10, Capstone Project 4
+- **Validation period:** October 12–13, 2026
+- **Infrastructure status:** Cloud resources removed after deployment validation; local Minikube profile retained and stopped.
+
+This runbook defines the procedures for establishing an independent repository, implementing the complete application configuration, validating locally, deploying to LKE, troubleshooting, recovering, releasing and removing resources. Section 5 contains the complete configuration required to reproduce the deployment.
+
+**Execution convention:** Run command blocks individually and in sequence. Resolve errors before proceeding to dependent operations. Commands execute on the local workstation unless marked as Cloud Manager actions or executed inside a Pod. Expected output is explanatory text, not a command.
+
+**Verification convention:** “Verified” identifies an observed result from this deployment. “Reference” identifies a procedure included for operation or recovery that was not exercised. Configuration-derived expectations are distinguished from observed provider inventory.
 
 ## Contents
 
@@ -79,12 +88,12 @@ These are Kubernetes Service ports, not necessarily container ports: email maps 
 | Simulated checkout | Checkout logs recorded PlaceOrder, simulated payment success, and simulated email confirmation. |
 | Redis isolation | Unlabelled client could not connect to `redis-cart:6379`; logs reported Operation timed out, exit code 1. This supports blocked ingress. |
 | Frontend recovery | Rollout restart completed successfully. This tests controlled restart, not node-failure recovery or rollback. |
-| Cleanup | Owner confirmed deletion of LKE, worker and NodeBalancer in Cloud Manager; local Minikube profile was stopped. |
+| Cleanup | Cluster, worker and NodeBalancer deletion confirmed by the project operator in Cloud Manager; local profile stopped. |
 | Later inventory | EndpointSlice/PVC/final inventory requests failed after cloud deletion; they were not verified by those requests. |
 
-Browser confirmation of currency switching, the final order page, and cart retention after the frontend restart was requested but not separately confirmed in the recorded outputs. Do not claim those specific checks passed solely from Pod readiness.
+**Validation scope:** Checkout logs establish the simulated backend order path. Separate browser acceptance results for currency switching, the confirmation page and post-restart cart retention were not recorded. Readiness results do not establish those browser behaviours.
 
-- This is a working educational deployment with selected production and security practices, not a fully production-ready shop.
+- Deployment scope: an educational environment implementing selected production and security practices.
 - One worker and one replica per component provide no worker-node redundancy.
 - Redis has no replication or durable persistence. `emptyDir` is lost with Pod replacement; persistence is disabled and `allkeys-lru` may evict cart keys.
 - HTTP exposure has no TLS in this implementation. Payment and email operations are simulated.
@@ -148,7 +157,7 @@ The existing local profiles were stopped. Do not reuse another project's cluster
 
 ### Option A — clone the completed portfolio configuration
 
-Use this for redeployment; it is an alternative to constructing a new independent baseline. Until the final release is pushed, use `develop`. After release, use `main`.
+Use this path to redeploy the repository configuration. Before the documentation release, clone `develop`; after the final release, clone `main`. Section 12 defines the release procedure.
 
 ```bash
 mkdir -p ~/Documents/tech-workspace/devops-capstone-projects
@@ -163,7 +172,7 @@ Do not clone into an existing project directory. For an existing checkout, switc
 
 ### Option B — build a new independent portfolio repository
 
-This reconstructs the original implementation flow. Use your own GitHub/GitLab names for a new repository. The shown original remote URLs already contain history and must not be treated as empty repositories.
+Use this path to create a new independent implementation. Select new repository names under the appropriate GitHub and GitLab namespaces. The reference repositories already contain history; their URLs are provided to document the established remote convention.
 
 Create an empty directory and initialize Git. Inspect an existing directory before reusing it.
 
@@ -231,7 +240,7 @@ Description:
 
 > Deploy Google's Online Boutique microservices on Linode LKE using Kubernetes Deployments and Services, with production and security best practices, deployment verification, and a complete reproducible runbook.
 
-For the original repository setup, the commands were:
+The established remote configuration is shown below. Substitute the new repository URLs when reproducing an independent project:
 
 ```bash
 git remote add origin git@github.com:younghadiz/deploy-microservices-kubernetes.git
@@ -274,7 +283,7 @@ git switch -c feature/kubernetes-manifests
 ```
 
 
-Write the complete files from section 5, understanding the ports/dependencies described in section 4. The recorded implementation introduced Redis first, tested it locally, then added catalogue, cart, currency, shipping, payment, email, recommendation, ads, checkout and frontend. Validate each logical addition or the completed collection before committing.
+Implement the files in section 5 using the application contract in section 4. Recommended development order: Redis, catalogue, cart, currency, shipping, payment, email, recommendation, advertising, checkout and frontend. Validate each logical addition before committing; complete local preparation before paid provisioning.
 
 ```bash
 git add k8s/
@@ -375,7 +384,7 @@ mkdir -p k8s/lke
 ```
 
 
-Open each listed file with `vim <path>`, paste its entire block, save and exit. These are exact contents read from the committed configuration at `098217f`, not abbreviated examples. Keep the root starting skeleton as provenance; never apply it to Kubernetes.
+Create each listed file at its specified repository path using a text editor. The blocks reproduce the complete committed configuration at `098217f`. The root starting skeleton is retained for provenance and is excluded from deployment.
 
 
 ### `.gitignore`
@@ -1701,7 +1710,7 @@ docker buildx imagetools inspect gcr.io/google-samples/microservices-demo/checko
 ```
 
 
-All eight lookups succeeded in the original run. They establish registry availability, not vulnerability status or successful execution.
+All eight registry lookups succeeded during validation. Registry availability does not establish vulnerability status or runtime correctness.
 
 ## 7. LKE provisioning and connection
 
@@ -1783,11 +1792,11 @@ kubectl --kubeconfig="$HOME/.kube/online-boutique-lke.yaml" get service frontend
 ```
 
 
-This requests a billable NodeBalancer. Once EXTERNAL-IP appears, press Control+C to stop the watch. Open `http://<EXTERNAL-IP>` in a browser. The original external IP was 192.53.121.214; it is historical, released and must not be reused as the expected address in a new deployment.
+This requests a billable NodeBalancer. Once EXTERNAL-IP appears, press Control+C to stop the watch. Open `http://<EXTERNAL-IP>` in a browser. Historical external IP: 192.53.121.214. This address was released during cleanup; obtain the assigned address for each new deployment.
 
 ### Application checks
 
-Browse product details, switch currency, add a product, edit cart quantity, complete checkout with dummy values, and inspect the confirmation page. Refresh the cart after frontend restart. Record which browser behaviours you actually see; the recorded checkout logs prove the simulated backend path, but not every browser interaction.
+Browse product details, switch currency, add a product, edit cart quantity, complete checkout with dummy values, and inspect the confirmation page. Refresh the cart after frontend restart. Record the acceptance result for each browser behaviour separately. Checkout logs establish the simulated backend path but do not substitute for browser acceptance testing.
 
 ```bash
 kubectl --kubeconfig="$HOME/.kube/online-boutique-lke.yaml" logs -n online-boutique deployment/checkoutservice --tail=40
@@ -1858,7 +1867,7 @@ kubectl --kubeconfig="$HOME/.kube/online-boutique-lke.yaml" logs redis-blocked-c
 ```
 
 
-A blank terminated exit-code query means no termination value was reported yet. Final observed log: `Could not connect to Redis at redis-cart:6379: Operation timed out`. The recorded exit code was 1, not the initially predicted 124 or 137. This supports the expected denied-access behaviour; it is not a comprehensive NetworkPolicy test suite.
+A blank terminated exit-code query means no termination value was reported yet. Observed error: `Could not connect to Redis at redis-cart:6379: Operation timed out`. Observed container exit code: 1. Exit codes 124 and 137 were not observed. This supports the expected denied-access behaviour; it is not a comprehensive NetworkPolicy test suite.
 
 Clean up the client:
 
@@ -1909,7 +1918,7 @@ Undo rolls back the Pod template, not Services, namespace, policies or external 
 
 ## 11. Cleanup
 
-Finish live verification before deleting the cluster. No screenshots are required by this guide or README.
+Complete runtime validation and record required results before removing the cluster. Deleting public access makes the application unavailable; deleting the cluster invalidates its API endpoint.
 
 ### Remove public access first
 
@@ -1922,7 +1931,7 @@ kubectl --kubeconfig="$HOME/.kube/online-boutique-lke.yaml" wait --for=delete se
 ```
 
 
-These were supplied as the cleanup sequence; their successful terminal outputs were not separately captured. The owner subsequently confirmed actual NodeBalancer removal in Cloud Manager.
+The command sequence defines the recommended cleanup order. Successful command output was not separately retained; NodeBalancer removal was subsequently confirmed by the project operator in Cloud Manager.
 
 In Cloud Manager, verify the project NodeBalancer has been removed before deleting the cluster. A remaining NodeBalancer is a billable resource; do not infer its absence solely from a Kubernetes API failure.
 
@@ -1930,7 +1939,7 @@ In Cloud Manager, verify the project NodeBalancer has been removed before deleti
 
 Open Kubernetes, select online-boutique-lke, choose Delete Cluster and complete the provider confirmation. Verify its worker is absent from Linodes and its NodeBalancer is absent from NodeBalancers. Inspect Volumes for any project storage; these manifests create no PVC, but check for resources created outside them. Leave unrelated resources intact.
 
-The owner confirmed removal of the cluster, worker and NodeBalancer. No separate cloud-volume inventory output was captured. This is user-confirmed cleanup, not an automated provider inventory report.
+**Observed cleanup:** The project operator confirmed removal of the cluster, worker and NodeBalancer in Cloud Manager. No separate cloud-volume inventory was retained; these manifests define no PersistentVolumeClaim. The cleanup record is operator-confirmed rather than an automated provider inventory report.
 
 ### Stop the local profile
 
@@ -1943,21 +1952,28 @@ Observed: one local node stopped. The profile is retained; local deletion was no
 
 ### Deleted-cluster kubeconfig
 
-After deletion, the old API hostname returned no such host. This is expected for a stale kubeconfig. chmod changes file permissions only; it does not restore a removed cluster. Stop trying live verification against the deleted endpoint and do not recreate paid infrastructure solely to repeat already captured evidence. The explicit stale kubeconfig remains outside the repository and can be removed locally if no longer needed.
+After deletion, the old API hostname returned no such host. This is expected for a stale kubeconfig. chmod changes file permissions only; it does not restore a removed cluster. Post-deletion verification uses Cloud Manager resource inventory. An unavailable API endpoint is not proof that all billable resources were removed. Reprovisioning solely to recover an already captured validation result is unnecessary. The explicit stale kubeconfig remains outside the repository and can be removed locally if no longer needed.
 
 ## 12. Documentation and final Git release
 
-Final documentation is prepared after implementation and cleanup. Use the supplied final README and this complete runbook. No verification-log file is required.
+### Documentation branch
 
-The original cloud-deployment branch had no manifest changes solely from kubectl commands. Add the final README and runbook there as the meaningful deliverable; do not create an empty deployment commit or merge.
+Final documentation is maintained on a separate branch, `docs/final-runbook`, created from the current `develop`. Cloud deployment commands did not alter tracked manifests, so `feature/lke-deployment` requires no empty commit or merge solely to record deployment activity.
 
 ```bash
-git switch feature/lke-deployment
-mkdir -p docs
+git switch develop
+git pull --ff-only origin develop
 ```
 
+```bash
+git switch -c docs/final-runbook
+```
 
-Place the final README at README.md and this file at docs/RUNBOOK.md. Review before staging; do not stage screenshots or credentials.
+Place the final project overview at `README.md` and this guide at `docs/RUNBOOK.md`. If these edits already exist on the deployment branch, they may carry across when the underlying tracked files are identical. If Git refuses a switch to prevent overwriting changes, preserve the edits before continuing; do not discard them.
+
+### Review and commit
+
+Stage the two documentation files explicitly:
 
 ```bash
 git add README.md docs/RUNBOOK.md
@@ -1965,55 +1981,76 @@ git diff --cached --check
 git diff --cached --stat
 ```
 
+Review technical accuracy, complete configuration contents, source attribution, validation scope and cleanup status before committing.
+
 ```bash
-git commit -m "docs: finalize verified LKE deployment guide and runbook"
+git commit -m "docs: finalize professional README and deployment runbook"
 ```
 
 ```bash
-git push -u origin feature/lke-deployment
-git push gitlab feature/lke-deployment
+git push -u origin docs/final-runbook
 ```
 
+```bash
+git push gitlab docs/final-runbook
+```
 
-Integrate the completed feature into develop:
+### Integrate into develop
 
 ```bash
 git switch develop
 git pull --ff-only origin develop
-git merge --no-ff feature/lke-deployment -m "merge: integrate verified LKE deployment documentation"
+```
+
+```bash
+git merge --no-ff docs/final-runbook -m "merge: integrate final project documentation"
 ```
 
 ```bash
 git push origin develop
+```
+
+```bash
 git push gitlab develop
 ```
 
+### Release to main
 
-Perform the final release only after reviewing implementation, documentation and cleanup:
+Release after documentation review and confirmation of deployment validation and cleanup:
 
 ```bash
 git switch main
 git pull --ff-only origin main
+```
+
+```bash
 git merge --no-ff develop -m "merge: release verified Kubernetes microservices capstone"
 ```
 
 ```bash
 git push origin main
+```
+
+```bash
 git push gitlab main
 ```
 
+### Align develop and verify remote synchronization
 
-Align develop with the released main using the resulting fast-forward, preserving the no-ff release merge:
+Fast-forward `develop` to the completed release commit. This preserves the explicit documentation and release merge commits while aligning branch tips.
 
 ```bash
 git switch develop
 git merge --ff-only main
-git push origin develop
-git push gitlab develop
 ```
 
+```bash
+git push origin develop
+```
 
-Verify final content/history and both remotes:
+```bash
+git push gitlab develop
+```
 
 ```bash
 git diff --exit-code main develop
@@ -2026,8 +2063,9 @@ git ls-remote --heads origin main develop
 git ls-remote --heads gitlab main develop
 ```
 
+**Acceptance criteria:** No content difference between main and develop; clean tracked working tree; matching main/develop commit references on both remotes. Review any untracked local files separately before declaring the entire working tree clean.
 
-Expected no content diff, clean tree, and all four main/develop remote refs matching the released commit after alignment. These final-release commands are a procedure awaiting execution at the time these documents were authored; earlier feature pushes and the integration at 098217f are verified history. Do not report final release complete until the actual output confirms it.
+**Verification status:** This section defines the final documentation and release procedure. Those operations were pending at publication of this revision. The earlier implementation integration at `098217f` and its pushes to both remotes are verified history.
 
 ## 13. Troubleshooting reference
 
@@ -2045,7 +2083,7 @@ Expected no content diff, clean tree, and all four main/develop remote refs matc
 | ARM image execution error | Validate architecture; selected frontend/cart v0.8.0 are AMD64. Full runtime was performed on AMD64 workers. |
 | Redis rootfs write fails | Expected because root filesystem is read-only; /data is the writable emptyDir mount. |
 
-For new runtime errors, inspect the affected Pod, events and logs before changing configuration. These diagnostic commands are reference procedures, not additional executed checks from the original run:
+For runtime errors, inspect the affected Pod, events and logs before modifying configuration. The commands below are operational reference procedures; they were not required to resolve a failed application rollout in this deployment:
 
 ```bash
 kubectl --kubeconfig="$HOME/.kube/online-boutique-lke.yaml" get pods -n online-boutique
@@ -2065,4 +2103,4 @@ Use the actual failing Pod name with `kubectl describe pod <name> -n online-bout
 - LKE creation: https://techdocs.akamai.com/cloud-computing/docs/create-a-cluster
 - Independent implementation and documentation: Gafari Salaudeen.
 
-This guide includes the complete implemented configuration and distinguishes observed outcomes from reference procedures and unconfirmed browser/provider details.
+The configuration appendix is complete. Operational records distinguish observed results, reference procedures and validation items without retained evidence.
